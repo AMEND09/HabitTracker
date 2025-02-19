@@ -32,8 +32,7 @@ jobs:
         
       - name: Build
         run: npm run build
-        env:
-          VITE_BASE_URL: '/${{ github.event.repository.name }}'
+        # Remove the VITE_BASE_URL env variable since we're using relative paths
         
       - name: Setup Pages
         uses: actions/configure-pages@v4

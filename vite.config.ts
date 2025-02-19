@@ -1,21 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
-import Pages from 'vite-plugin-pages';
+import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    Pages({
-      dirs: [{ dir: 'src/artifacts', baseRoute: '' }],
-      extensions: ['jsx', 'tsx'],   
-    }),
-  ],
+  plugins: [react()],
+  base: './',
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      'src': path.resolve(__dirname, './src'),
+      '@': resolve(__dirname, './src'),
     },
-  }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 })
