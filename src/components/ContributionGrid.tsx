@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Info } from 'lucide-react';
 
 interface ContributionGridProps {
   data: Record<string, number>;
@@ -183,15 +182,13 @@ const ContributionGrid = ({
         ))}
       </div>
 
-      <div className="w-full overflow-visible flex justify-center">
+      <div className="flex flex-col gap-2">
         <div 
-          className={`grid grid-rows-7 grid-flow-col ${gridGap} mx-4`}
+          className={`grid grid-rows-7 grid-flow-col ${gridGap}`}
           style={{
             background: 'rgb(31 41 55 / 0.3)',
-            padding: size === 'small' ? '3px' : '2px',
+            padding: '3px',
             borderRadius: '4px',
-            width: size === 'small' ? '100%' : '95%',
-            maxWidth: size === 'small' ? '100%' : '95%'
           }}
         >
           {days.map((day, i) => (
@@ -211,6 +208,18 @@ const ContributionGrid = ({
             />
           ))}
         </div>
+
+        <div className="flex items-center gap-2 text-xs text-gray-400 justify-start px-3">
+          <span>Less</span>
+          {[0, levels.low, levels.medium, levels.high].map((level) => (
+            <div
+              key={level}
+              className={`w-3 h-3 rounded-sm ${getContributionLevel(level)}`}
+              title={`${level} ${unit}`} 
+            />
+          ))}
+          <span>More</span>
+        </div>
       </div>
 
       {enableTooltip && hoveredCell && (
@@ -228,20 +237,6 @@ const ContributionGrid = ({
           </div>
         </div>
       )}
-
-      <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-400">
-        <span className="text-[10px]">Less</span>
-        <div className="w-2 h-2 rounded-sm bg-gray-700" />
-        <div className="w-2 h-2 rounded-sm bg-green-900" />
-        <div className="w-2 h-2 rounded-sm bg-green-700" />
-        <div className="w-2 h-2 rounded-sm bg-green-500" />
-        <div className="w-2 h-2 rounded-sm bg-green-300" />
-        <span className="text-[10px]">More</span>
-        <div className="ml-2 flex items-center gap-1 text-[10px]">
-          <Info size={12} className="text-gray-500" />
-          <span>Values: 0 → {levels.low} → {levels.medium} → {levels.high}+</span>
-        </div>
-      </div>
     </div>
   );
 };

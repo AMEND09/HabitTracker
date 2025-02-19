@@ -383,8 +383,8 @@ export default function HabitTracker() {
                     <h2 className="text-lg font-semibold">{habit.name}</h2>
                     <span className="text-sm text-gray-400">Unit: {habit.unit}</span>
                   </div>
-                  <div className="space-y-6">
-                    <div>
+                  <div className="space-y-6 overflow-auto"> {/* Added overflow-auto */}
+                    <div className="min-w-fit"> {/* Added min-w-fit to prevent shrinking */}
                       <h3 className="text-sm text-gray-400 mb-2">Jan - June</h3>
                       <ContributionGrid
                         data={convertToGridData(habit)}
@@ -395,7 +395,7 @@ export default function HabitTracker() {
                         timeRange="first-half"
                       />
                     </div>
-                    <div>
+                    <div className="min-w-fit"> {/* Added min-w-fit to prevent shrinking */}
                       <h3 className="text-sm text-gray-400 mb-2">July - Dec</h3>
                       <ContributionGrid
                         data={convertToGridData(habit)}
