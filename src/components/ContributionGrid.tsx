@@ -36,7 +36,7 @@ const ContributionGrid = ({
   } | null>(null);
   
   const getContributionLevel = (value: number, future = false) => {
-    if (future || value === 0) return 'bg-gray-800';
+    if (future || value === 0) return 'bg-gray-700';
     
     // Calculate intensity based on value ranges
     let intensity = 0;
@@ -163,8 +163,9 @@ const ContributionGrid = ({
   };
 
   const { days, totalWeeks } = generateGridData();
-  const cellSize = size === 'small' ? 'w-2 h-2' : 'w-3 h-3';
-  const gridGap = size === 'small' ? 'gap-px' : 'gap-0.5';
+  // Smaller cells for grid view
+  const cellSize = size === 'small' ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5';  
+  const gridGap = size === 'small' ? 'gap-[3px]' : 'gap-[2px]';
 
   return (
     <div className="relative w-full">
@@ -182,13 +183,15 @@ const ContributionGrid = ({
         ))}
       </div>
 
-      <div className="w-full overflow-hidden">
+      <div className="w-full overflow-visible flex justify-center">
         <div 
-          className={`grid grid-rows-7 grid-flow-col ${gridGap} w-full`}
+          className={`grid grid-rows-7 grid-flow-col ${gridGap} mx-4`}
           style={{
             background: 'rgb(31 41 55 / 0.3)',
-            padding: '1px',
-            borderRadius: '4px'
+            padding: size === 'small' ? '3px' : '2px',
+            borderRadius: '4px',
+            width: size === 'small' ? '100%' : '95%',
+            maxWidth: size === 'small' ? '100%' : '95%'
           }}
         >
           {days.map((day, i) => (
@@ -228,7 +231,7 @@ const ContributionGrid = ({
 
       <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-400">
         <span className="text-[10px]">Less</span>
-        <div className="w-2 h-2 rounded-sm bg-gray-800" />
+        <div className="w-2 h-2 rounded-sm bg-gray-700" />
         <div className="w-2 h-2 rounded-sm bg-green-900" />
         <div className="w-2 h-2 rounded-sm bg-green-700" />
         <div className="w-2 h-2 rounded-sm bg-green-500" />
