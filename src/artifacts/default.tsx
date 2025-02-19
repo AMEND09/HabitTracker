@@ -116,11 +116,13 @@ export default function HabitTracker() {
   }, [habits]);
 
   const addHabit = (habit: Omit<Habit, 'id' | 'data'>) => {
-    setHabits(prev => [...prev, {
+    const newHabit = {
       ...habit,
       id: Date.now().toString(),
       data: []
-    }]);
+    };
+    setHabits(prev => [...prev, newHabit]);
+    setActiveHabit(newHabit.id); // Set the active habit to the newly created one
   };
 
   const deleteHabit = (habitId: string) => {
@@ -307,7 +309,10 @@ export default function HabitTracker() {
     }
   }, [habits, activeHabit]);
 
-  const convertToGridData = (habit: Habit) => {
+  // Update the convertToGridData function with null checks
+  const convertToGridData = (habit?: Habit) => {
+    if (!habit) return {};
+    
     const data: Record<string, number> = {};
     habit.data.forEach(entry => {
       data[entry.date] = entry.value;
@@ -386,25 +391,29 @@ export default function HabitTracker() {
                   <div className="space-y-6 overflow-auto"> {/* Added overflow-auto */}
                     <div className="min-w-fit"> {/* Added min-w-fit to prevent shrinking */}
                       <h3 className="text-sm text-gray-400 mb-2">Jan - June</h3>
-                      <ContributionGrid
-                        data={convertToGridData(habit)}
-                        levels={habit.levels}
-                        unit={habit.unit}
-                        onCellClick={handleCellClick}
-                        size="small"
-                        timeRange="first-half"
-                      />
+                      {habit && (
+                        <ContributionGrid
+                          data={convertToGridData(habit)}
+                          levels={habit.levels}
+                          unit={habit.unit}
+                          onCellClick={handleCellClick}
+                          size="small"
+                          timeRange="first-half"
+                        />
+                      )}
                     </div>
                     <div className="min-w-fit"> {/* Added min-w-fit to prevent shrinking */}
                       <h3 className="text-sm text-gray-400 mb-2">July - Dec</h3>
-                      <ContributionGrid
-                        data={convertToGridData(habit)}
-                        levels={habit.levels}
-                        unit={habit.unit}
-                        onCellClick={handleCellClick}
-                        size="small"
-                        timeRange="second-half"
-                      />
+                      {habit && (
+                        <ContributionGrid
+                          data={convertToGridData(habit)}
+                          levels={habit.levels}
+                          unit={habit.unit}
+                          onCellClick={handleCellClick}
+                          size="small"
+                          timeRange="second-half"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

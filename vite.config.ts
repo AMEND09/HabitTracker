@@ -13,7 +13,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'web-app-manifest-192x192.png', 'web-app-manifest-512x512.png'],
+      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Habit Tracker',
         short_name: 'Habits',
@@ -21,17 +21,17 @@ export default defineConfig({
         theme_color: '#111827',
         background_color: '#111827',
         display: 'standalone',
-        scope: '.',
-        start_url: '.',
+        scope: '/HabitTracker/',
+        start_url: '/HabitTracker/',
         icons: [
           {
-            src: './web-app-manifest-192x192.png',
+            src: '/HabitTracker/web-app-manifest-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: './web-app-manifest-512x512.png',
+            src: '/HabitTracker/web-app-manifest-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
@@ -42,12 +42,11 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        navigateFallback: 'index.html',
-        navigateFallbackAllowlist: [/^(?!.*\.(js|css|jpg|png|svg|json)$).*$/]
+        navigateFallback: 'index.html'
       }
     })
   ],
-  base: './',
+  base: '/HabitTracker/',
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
