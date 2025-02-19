@@ -618,51 +618,55 @@ export default function HabitTracker() {
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-4 px-4 sm:px-6 pb-4"> {/* Reduced padding */}
-                      <div className="space-y-4 sm:space-y-6"> {/* Reduced gap */}
-                        {shouldSplitYear ? (
-                          // Split view for small screens
-                          <>
-                            <div>
-                              <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
-                                <ContributionGrid
-                                  data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
-                                  levels={habits.find(h => h.id === activeHabit)!.levels}
-                                  unit={habits.find(h => h.id === activeHabit)!.unit}
-                                  onCellClick={handleCellClick}
-                                  size="default"
-                                  timeRange="first-half"
-                                />
-                              </h3>
-                            </div>
-                            <div>
-                              <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
-                                <ContributionGrid
-                                  data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
-                                  levels={habits.find(h => h.id === activeHabit)!.levels}
-                                  unit={habits.find(h => h.id === activeHabit)!.unit}
-                                  onCellClick={handleCellClick}
-                                  size="default"
-                                  timeRange="second-half"
-                                />
-                              </h3>
-                            </div>
-                          </>
-                        ) : (
-                          // Full year view for larger screens
-                          <div>
-                            <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
-                              <ContributionGrid
-                                data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
-                                levels={habits.find(h => h.id === activeHabit)!.levels}
-                                unit={habits.find(h => h.id === activeHabit)!.unit}
-                                onCellClick={handleCellClick}
-                                size="default"
-                                timeRange="full-year"
-                              />
-                            </h3>
+                    <div className="mt-4 overflow-x-auto pb-4"> {/* Added overflow handling */}
+                      <div className="flex justify-center min-w-fit"> {/* Ensure minimum width fits content */}
+                        <div className="w-[98%] md:w-[95%]"> {/* Adjusted width and made it responsive */}
+                          <div className="space-y-4 sm:space-y-6">
+                            {shouldSplitYear ? (
+                              // Split view for small screens
+                              <>
+                                <div>
+                                  <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
+                                    <ContributionGrid
+                                      data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
+                                      levels={habits.find(h => h.id === activeHabit)!.levels}
+                                      unit={habits.find(h => h.id === activeHabit)!.unit}
+                                      onCellClick={handleCellClick}
+                                      size="default"
+                                      timeRange="first-half"
+                                    />
+                                  </h3>
+                                </div>
+                                <div>
+                                  <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
+                                    <ContributionGrid
+                                      data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
+                                      levels={habits.find(h => h.id === activeHabit)!.levels}
+                                      unit={habits.find(h => h.id === activeHabit)!.unit}
+                                      onCellClick={handleCellClick}
+                                      size="default"
+                                      timeRange="second-half"
+                                    />
+                                  </h3>
+                                </div>
+                              </>
+                            ) : (
+                              // Full year view for larger screens
+                              <div>
+                                <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
+                                  <ContributionGrid
+                                    data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
+                                    levels={habits.find(h => h.id === activeHabit)!.levels}
+                                    unit={habits.find(h => h.id === activeHabit)!.unit}
+                                    onCellClick={handleCellClick}
+                                    size="default"
+                                    timeRange="full-year"
+                                  />
+                                </h3>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   )}
