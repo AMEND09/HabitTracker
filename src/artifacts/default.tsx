@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, Square, Plus, Save, Search, Pencil, Trash2, Settings, Grid, Layout, Download, Upload, LucideIcon } from 'lucide-react';
+import ContributionGrid from '../components/ContributionGrid';
+import { useWindowSize } from '../components/hooks/useWindowSize';
 
 type HabitData = {
   date: string;
@@ -113,14 +115,6 @@ export default function HabitTracker() {
     localStorage.setItem('habits', JSON.stringify(habits));
   }, [habits]);
 
-  const getContributionLevel = (value: number, habit: Habit) => {
-    if (value === 0) return 'bg-gray-800';
-    if (value < habit.levels.low) return 'bg-green-900';
-    if (value < habit.levels.medium) return 'bg-green-700';
-    if (value < habit.levels.high) return 'bg-green-500';
-    return 'bg-green-300';
-  };
-
   const addHabit = (habit: Omit<Habit, 'id' | 'data'>) => {
     setHabits(prev => [...prev, {
       ...habit,
@@ -181,45 +175,6 @@ export default function HabitTracker() {
     reader.readAsText(file);
   };
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-  const generateGridData = (habit?: Habit) => {
-    if (!habit) return [];
-    
-    const days = [];
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    
-    // Get first day of the year
-    const startDate = new Date(Date.UTC(currentYear, 0, 1));
-    
-    // Adjust to start from first Sunday of the year
-    const startDay = startDate.getUTCDay();
-    startDate.setUTCDate(startDate.getUTCDate() - startDay);
-
-    for (let week = 0; week < 53; week++) {
-      for (let day = 0; day < 7; day++) {
-        const currentDate = new Date(startDate);
-        currentDate.setUTCDate(startDate.getUTCDate() + (week * 7) + day);
-        
-        // Only include dates from current year and up to today
-        if (currentDate > today || currentDate.getUTCFullYear() !== currentYear) continue;
-        
-        const dateStr = currentDate.toISOString().split('T')[0];
-        const focusEntry = habit.data.find(d => d.date === dateStr);
-
-        days.push({
-          date: dateStr,
-          value: focusEntry?.value || 0,
-          dayOfWeek: day,
-          week: week
-        });
-      }
-    }
-    return days;
-  };
-
   const saveFocusTime = () => {
     const today = new Date().toISOString().split('T')[0];
     setHabits(prev => prev.map(h => {
@@ -260,11 +215,21 @@ export default function HabitTracker() {
     setHabits(prev => prev.map(h => {
       if (h.id !== activeHabit) return h;
       if (editingEntry) {
-        return { ...h, data: h.data.map(d => d.date === editingEntry.date ? { date: logDate, value: logMinutes } : d) };
+        // Replace the existing entry completely rather than adding to it
+        return {
+          ...h,
+          data: h.data.map(d => d.date === editingEntry.date 
+            ? { date: logDate, value: logMinutes }
+            : d
+          )
+        };
       }
       const existingEntry = h.data.find(d => d.date === logDate);
       const newData = existingEntry
-        ? h.data.map(d => d.date === logDate ? { ...d, value: d.value + logMinutes } : d)
+        ? h.data.map(d => d.date === logDate 
+            ? { ...d, value: logMinutes } // Replace value instead of adding
+            : d
+          )
         : [...h.data, { date: logDate, value: logMinutes }];
       return { ...h, data: newData };
     }));
@@ -275,7 +240,7 @@ export default function HabitTracker() {
   const handleEditEntry = (entry: HabitData) => {
     setEditingEntry(entry);
     setLogDate(entry.date);
-    setLogMinutes(entry.value);
+    setLogMinutes(entry.value); // Use the value from the cell being edited
     setShowLogForm(true);
   };
 
@@ -319,27 +284,6 @@ export default function HabitTracker() {
     return () => clearInterval(interval);
   }, [isRunning, targetMinutes]);
 
-  const getVisibleMonths = () => {
-    const currentYear = new Date().getFullYear();
-    const startDate = new Date(Date.UTC(currentYear, 0, 1));
-    const startDay = startDate.getUTCDay();
-    const weekOffset = Math.floor(startDay / 7);
-
-    return months.map((month, index) => {
-      const monthStart = new Date(Date.UTC(currentYear, index, 1));
-      const weekFromStart = Math.floor(
-        (monthStart.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)
-      );
-      return {
-        month,
-        startWeek: weekFromStart + weekOffset,
-        weeks: 4,
-        // Only show every 3rd month on mobile, every 2nd month on tablet, and all months on desktop
-        visible: index % 3 === 0 || window.innerWidth >= 768
-      };
-    });
-  };
-
   const handleHabitSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     addHabit(newHabit);
@@ -363,6 +307,31 @@ export default function HabitTracker() {
     }
   }, [habits, activeHabit]);
 
+  const convertToGridData = (habit: Habit) => {
+    const data: Record<string, number> = {};
+    habit.data.forEach(entry => {
+      data[entry.date] = entry.value;
+    });
+    return data;
+  };
+
+  // Add helper to get cell value
+  const getCellValue = (date: string) => {
+    const habit = habits.find(h => h.id === activeHabit);
+    const entry = habit?.data.find(d => d.date === date);
+    return entry?.value || 0;
+  };
+
+  // Update cell click handler in both grid views
+  const handleCellClick = (date: string) => {
+    setLogDate(date);
+    setLogMinutes(getCellValue(date)); // Set the exact value from the cell
+    setShowLogForm(true);
+  };
+
+  const windowWidth = useWindowSize();
+  const shouldSplitYear = windowWidth < 768; // Split on screens smaller than medium breakpoint
+
   // In the render logic, add optional chaining and null checks
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -370,7 +339,7 @@ export default function HabitTracker() {
         <EmptyState onAddHabit={() => setShowHabitForm(true)} />
       ) : (
         <div className="max-w-6xl mx-auto px-4 py-4 sm:p-8">
-          {/* Navigation */}
+          {/* Updated Navigation */}
           <div className="flex justify-between items-center mb-6 sm:mb-8">
             <div className="flex gap-2 sm:gap-4">
               <NavButton
@@ -388,99 +357,54 @@ export default function HabitTracker() {
                 Single View
               </NavButton>
             </div>
-            <button
-              onClick={() => setShowHabitForm(true)}
-              className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg flex items-center gap-2 sm:px-4"
-            >
-              <Plus size={20} />
-              <span className="hidden sm:inline">Add Habit</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-2 hover:bg-gray-700 rounded-lg flex items-center gap-2"
+              >
+                <Settings size={20} />
+                <span className="hidden sm:inline">Settings</span>
+              </button>
+              <button
+                onClick={() => setShowHabitForm(true)}
+                className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg flex items-center gap-2 sm:px-4"
+              >
+                <Plus size={20} />
+                <span className="hidden sm:inline">Add Habit</span>
+              </button>
+            </div>
           </div>
 
           {activeView === 'dashboard' ? (
             <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
               {habits.map(habit => (
-                <div key={habit.id} className="bg-gray-800 p-6 rounded-lg">
+                <div key={habit.id} className="bg-gray-800 p-4 sm:p-6 rounded-lg">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">{habit.name}</h2>
-                    <span className="text-gray-400">Unit: {habit.unit}</span>
+                    <h2 className="text-lg font-semibold">{habit.name}</h2>
+                    <span className="text-sm text-gray-400">Unit: {habit.unit}</span>
                   </div>
-                  {/* Grid for each habit */}
-                  <div className="flex">
-                    {/* Y-axis labels */}
-                    <div className="flex flex-col justify-between pr-6 text-xs text-gray-400 h-[128px] w-12">
-                      {weekDays.map(day => (
-                        <div key={day} className="h-3">{day}</div>
-                      ))}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm text-gray-400 mb-2">Jan - June</h3>
+                      <ContributionGrid
+                        data={convertToGridData(habit)}
+                        levels={habit.levels}
+                        unit={habit.unit}
+                        onCellClick={handleCellClick}
+                        size="small"
+                        timeRange="first-half"
+                      />
                     </div>
-
-                    <div className="flex-1">
-                      {/* Month labels */}
-                      <div className="h-8 relative mb-8 text-[10px] sm:text-xs">
-                        {getVisibleMonths().map((monthData, i) => (
-                          monthData.visible && (
-                            <div
-                              key={i}
-                              className="absolute -top-4 transform -translate-x-1/2 font-medium whitespace-nowrap"
-                              style={{
-                                left: `${(monthData.startWeek / 52) * 100}%`,
-                              }}
-                            >
-                              {monthData.month}
-                            </div>
-                          )
-                        ))}
-                      </div>
-
-                      {/* Grid */}
-                      <div 
-                        className="grid gap-1 relative"
-                        style={{
-                          gridTemplateRows: 'repeat(7, 1fr)',
-                          gridTemplateColumns: `repeat(53, 1fr)`,
-                          gridAutoFlow: 'column',
-                          background: `repeating-linear-gradient(
-                            to right,
-                            rgb(31 41 55 / 0.2) 0px,
-                            rgb(31 41 55 / 0.2) calc(100% / 53 - 1px),
-                            transparent calc(100% / 53 - 1px),
-                            transparent calc(100% / 53)
-                          ),
-                          repeating-linear-gradient(
-                            to bottom,
-                            rgb(31 41 55 / 0.2) 0px,
-                            rgb(31 41 55 / 0.2) calc(100% / 7 - 1px),
-                            transparent calc(100% / 7 - 1px),
-                            transparent calc(100% / 7)
-                          )`
-                        }}
-                      >
-                        {generateGridData(habit).map((day, i) => (
-                          <div
-                            key={i}
-                            className={`w-3 h-3 rounded-sm ${getContributionLevel(day.value, habit)}`}
-                            title={`${day.date}: ${day.value} ${habit.unit}`}
-                            style={{
-                              gridRow: day.dayOfWeek + 1,
-                              gridColumn: day.week + 1
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Color Key */}
-                  <div className="flex items-center gap-2 mt-4 text-xs text-gray-400">
-                    <span>Less</span>
-                    <div className={`w-3 h-3 rounded-sm bg-gray-800`} />
-                    <div className={`w-3 h-3 rounded-sm bg-green-900`} />
-                    <div className={`w-3 h-3 rounded-sm bg-green-700`} />
-                    <div className={`w-3 h-3 rounded-sm bg-green-500`} />
-                    <div className={`w-3 h-3 rounded-sm bg-green-300`} />
-                    <span>More</span>
-                    <div className="ml-4">
-                      <span>Values: 0 → {habit.levels.low} → {habit.levels.medium} → {habit.levels.high}+</span>
+                    <div>
+                      <h3 className="text-sm text-gray-400 mb-2">July - Dec</h3>
+                      <ContributionGrid
+                        data={convertToGridData(habit)}
+                        levels={habit.levels}
+                        unit={habit.unit}
+                        onCellClick={handleCellClick}
+                        size="small"
+                        timeRange="second-half"
+                      />
                     </div>
                   </div>
                 </div>
@@ -498,13 +422,6 @@ export default function HabitTracker() {
                     <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
                 </select>
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="p-2 hover:bg-gray-700 rounded-lg w-full sm:w-auto flex items-center justify-center gap-2"
-                >
-                  <Settings size={20} />
-                  <span className="sm:hidden">Settings</span>
-                </button>
               </div>
 
               {/* Timer Section */}
@@ -699,83 +616,51 @@ export default function HabitTracker() {
                       </div>
                     </div>
                   ) : (
-                    <div className="mt-8">
-                      <div className="flex">
-                        {/* Y-axis labels */}
-                        <div className="flex flex-col justify-between pr-6 text-xs text-gray-400 h-[128px] w-12">
-                          {weekDays.map(day => (
-                            <div key={day} className="h-3">{day}</div>
-                          ))}
-                        </div>
-
-                        <div className="flex-1">
-                          {/* Month labels */}
-                          <div className="h-8 relative mb-8 text-[10px] sm:text-xs">
-                            {getVisibleMonths().map((monthData, i) => (
-                              monthData.visible && (
-                                <div
-                                  key={i}
-                                  className="absolute -top-4 transform -translate-x-1/2 font-medium whitespace-nowrap"
-                                  style={{
-                                    left: `${(monthData.startWeek / 52) * 100}%`,
-                                  }}
-                                >
-                                  {monthData.month}
-                                </div>
-                              )
-                            ))}
-                          </div>
-
-                          {/* Grid */}
-                          <div 
-                            className="grid gap-1 relative"
-                            style={{
-                              gridTemplateRows: 'repeat(7, 1fr)',
-                              gridTemplateColumns: `repeat(53, 1fr)`,
-                              gridAutoFlow: 'column',
-                              background: `repeating-linear-gradient(
-                                to right,
-                                rgb(31 41 55 / 0.2) 0px,
-                                rgb(31 41 55 / 0.2) calc(100% / 53 - 1px),
-                                transparent calc(100% / 53 - 1px),
-                                transparent calc(100% / 53)
-                              ),
-                              repeating-linear-gradient(
-                                to bottom,
-                                rgb(31 41 55 / 0.2) 0px,
-                                rgb(31 41 55 / 0.2) calc(100% / 7 - 1px),
-                                transparent calc(100% / 7 - 1px),
-                                transparent calc(100% / 7)
-                              )`
-                            }}
-                          >
-                            {generateGridData(habits.find(h => h.id === activeHabit)!).map((day, i) => (
-                              <div
-                                key={i}
-                                className={`w-3 h-3 rounded-sm ${getContributionLevel(day.value, habits.find(h => h.id === activeHabit)! )}`}
-                                title={`${day.date}: ${day.value} ${habits.find(h => h.id === activeHabit)?.unit}`}
-                                style={{
-                                  gridRow: day.dayOfWeek + 1,
-                                  gridColumn: day.week + 1
-                                }}
+                    <div className="mt-4 px-4 sm:px-6 pb-4"> {/* Reduced padding */}
+                      <div className="space-y-4 sm:space-y-6"> {/* Reduced gap */}
+                        {shouldSplitYear ? (
+                          // Split view for small screens
+                          <>
+                            <div>
+                              <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
+                                <ContributionGrid
+                                  data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
+                                  levels={habits.find(h => h.id === activeHabit)!.levels}
+                                  unit={habits.find(h => h.id === activeHabit)!.unit}
+                                  onCellClick={handleCellClick}
+                                  size="default"
+                                  timeRange="first-half"
+                                />
+                              </h3>
+                            </div>
+                            <div>
+                              <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
+                                <ContributionGrid
+                                  data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
+                                  levels={habits.find(h => h.id === activeHabit)!.levels}
+                                  unit={habits.find(h => h.id === activeHabit)!.unit}
+                                  onCellClick={handleCellClick}
+                                  size="default"
+                                  timeRange="second-half"
+                                />
+                              </h3>
+                            </div>
+                          </>
+                        ) : (
+                          // Full year view for larger screens
+                          <div>
+                            <h3 className="text-sm text-gray-400 mb-1"> {/* Reduced margin */}
+                              <ContributionGrid
+                                data={convertToGridData(habits.find(h => h.id === activeHabit)!)}
+                                levels={habits.find(h => h.id === activeHabit)!.levels}
+                                unit={habits.find(h => h.id === activeHabit)!.unit}
+                                onCellClick={handleCellClick}
+                                size="default"
+                                timeRange="full-year"
                               />
-                            ))}
+                            </h3>
                           </div>
-                        </div>
-                      </div>
-
-                      {/* Color Key */}
-                      <div className="flex items-center gap-2 mt-4 text-xs text-gray-400">
-                        <span>Less</span>
-                        <div className={`w-3 h-3 rounded-sm bg-gray-800`} />
-                        <div className={`w-3 h-3 rounded-sm bg-green-900`} />
-                        <div className={`w-3 h-3 rounded-sm bg-green-700`} />
-                        <div className={`w-3 h-3 rounded-sm bg-green-500`} />
-                        <div className={`w-3 h-3 rounded-sm bg-green-300`} />
-                        <span>More</span>
-                        <div className="ml-4">
-                          <span>Values: 0 → {habits.find(h => h.id === activeHabit)?.levels.low} → {habits.find(h => h.id === activeHabit)?.levels.medium} → {habits.find(h => h.id === activeHabit)?.levels.high}+</span>
-                        </div>
+                        )}
                       </div>
                     </div>
                   )}
