@@ -86,7 +86,7 @@ export default function HabitTracker() {
   const [showLogForm, setShowLogForm] = useState(false);
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
   const [logMinutes, setLogMinutes] = useState(25);
-  const [activeTab, setActiveTab] = useState<'grid' | 'history'>('grid');
+  const [activeTab, setActiveTab] = useState<'grid' | 'list'>('grid'); // Changed from 'history'
   const [searchDate, setSearchDate] = useState('');
   const [editingEntry, setEditingEntry] = useState<HabitData | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -482,27 +482,29 @@ export default function HabitTracker() {
                         <Plus size={20} />
                         Log {habits.find(h => h.id === activeHabit)?.unit}
                       </button>
-                      <div className="bg-gray-700 rounded-lg p-1 flex gap-1">
-                        <button
-                          onClick={() => setActiveTab('grid')}
-                          className={`px-4 py-1.5 rounded-md transition-colors ${
-                            activeTab === 'grid' 
-                              ? 'bg-gray-600 text-white' 
-                              : 'text-gray-300 hover:text-white hover:bg-gray-600'
-                          }`}
-                        >
-                          Grid View
-                        </button>
-                        <button
-                          onClick={() => setActiveTab('history')}
-                          className={`px-4 py-1.5 rounded-md transition-colors ${
-                            activeTab === 'history' 
-                              ? 'bg-gray-600 text-white' 
-                              : 'text-gray-300 hover:text-white hover:bg-gray-600'
-                          }`}
-                        >
-                          History
-                        </button>
+                      <div className="bg-gray-700 rounded-lg w-fit"> {/* Added w-fit to contain width */}
+                        <div className="p-1 flex gap-1">
+                          <button
+                            onClick={() => setActiveTab('grid')}
+                            className={`px-4 py-1.5 rounded-md transition-colors ${
+                              activeTab === 'grid' 
+                                ? 'bg-gray-600 text-white' 
+                                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+                            }`}
+                          >
+                            Grid View
+                          </button>
+                          <button
+                            onClick={() => setActiveTab('list')}
+                            className={`px-4 py-1.5 rounded-md transition-colors ${
+                              activeTab === 'list' 
+                                ? 'bg-gray-600 text-white' 
+                                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+                            }`}
+                          >
+                            List View
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -573,7 +575,7 @@ export default function HabitTracker() {
                     </form>
                   )}
 
-                  {activeTab === 'history' ? (
+                  {activeTab === 'list' ? (
                     <div className="mt-4">
                       <div className="flex gap-4 mb-4">
                         <div className="relative flex-1">
