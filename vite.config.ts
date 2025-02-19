@@ -13,7 +13,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'web-app-manifest-192x192.png', 'web-app-manifest-512x512.png'],
       manifest: {
         name: 'Habit Tracker',
         short_name: 'Habits',
@@ -21,20 +21,29 @@ export default defineConfig({
         theme_color: '#111827',
         background_color: '#111827',
         display: 'standalone',
+        scope: '.',
+        start_url: '.',
         icons: [
           {
-            src: 'web-app-manifest-192x192.png',
+            src: './web-app-manifest-192x192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'maskable'
+            purpose: 'any'
           },
           {
-            src: 'web-app-manifest-512x512.png',
+            src: './web-app-manifest-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
           }
         ]
+      },
+      workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        navigateFallback: 'index.html',
+        navigateFallbackAllowlist: [/^(?!.*\.(js|css|jpg|png|svg|json)$).*$/]
       }
     })
   ],
