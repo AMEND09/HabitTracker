@@ -35,7 +35,9 @@ const ContributionGrid = ({
   } | null>(null);
   
   const getContributionLevel = (value: number, future = false) => {
-    if (future || value === 0) return 'bg-gray-700';
+    if (future || value === 0) {
+      return 'bg-empty'; // Use theme-aware empty state color
+    }
     
     // Calculate intensity based on value ranges
     let intensity = 0;
@@ -186,7 +188,7 @@ const ContributionGrid = ({
         <div 
           className={`grid grid-rows-7 grid-flow-col ${gridGap}`}
           style={{
-            background: 'rgb(31 41 55 / 0.3)',
+            background: 'transparent',
             padding: '3px',
             borderRadius: '4px',
           }}

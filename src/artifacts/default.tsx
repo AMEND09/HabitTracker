@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Square, Plus, Save, Search, Pencil, Trash2, Settings, Grid, Layout, Download, Upload, LucideIcon } from 'lucide-react';
+import { Play, Pause, Square, Plus, Save, Search, Pencil, Trash2, Settings, Grid, Layout, Download, Upload, LucideIcon, List } from 'lucide-react';
 import ContributionGrid from '../components/ContributionGrid';
 import { useWindowSize } from '../components/hooks/useWindowSize';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 type HabitData = {
   date: string;
@@ -28,7 +29,7 @@ const EmptyState = ({ onAddHabit }: { onAddHabit: () => void }) => (
       <p className="text-gray-400 mb-6">Start tracking your habits by creating your first one</p>
       <button
         onClick={onAddHabit}
-        className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center gap-2 mx-auto"
+        className="btn-primary flex items-center gap-2 mx-auto"
       >
         <Plus size={20} />
         Add First Habit
@@ -50,11 +51,9 @@ const NavButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-3 py-2 rounded-lg flex items-center gap-2 ${
-      active ? 'bg-blue-600' : 'bg-gray-700'
-    } sm:px-4`}
+    className={active ? 'nav-tab-active' : 'nav-tab'}
   >
-    <Icon size={20} />
+    <Icon size={20} className={active ? 'text-accent' : ''} />
     <span className="hidden sm:inline">{children}</span>
   </button>
 );
@@ -339,12 +338,12 @@ export default function HabitTracker() {
 
   // In the render logic, add optional chaining and null checks
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {habits.length === 0 ? (
         <EmptyState onAddHabit={() => setShowHabitForm(true)} />
       ) : (
         <div className="max-w-6xl mx-auto px-4 py-4 sm:p-8">
-          {/* Updated Navigation */}
+          {/* Update card backgrounds */}
           <div className="flex justify-between items-center mb-6 sm:mb-8">
             <div className="flex gap-2 sm:gap-4">
               <NavButton
@@ -363,16 +362,17 @@ export default function HabitTracker() {
               </NavButton>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <button
                 onClick={() => setShowSettings(true)}
-                className="p-2 hover:bg-gray-700 rounded-lg flex items-center gap-2"
+                className="btn-secondary flex items-center gap-2"
               >
                 <Settings size={20} />
                 <span className="hidden sm:inline">Settings</span>
               </button>
               <button
                 onClick={() => setShowHabitForm(true)}
-                className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg flex items-center gap-2 sm:px-4"
+                className="btn-primary flex items-center gap-2 sm:px-4"
               >
                 <Plus size={20} />
                 <span className="hidden sm:inline">Add Habit</span>
@@ -383,7 +383,7 @@ export default function HabitTracker() {
           {activeView === 'dashboard' ? (
             <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
               {habits.map(habit => (
-                <div key={habit.id} className="bg-gray-800 p-4 sm:p-6 rounded-lg">
+                <div key={habit.id} className="bg-card p-4 sm:p-6 rounded-lg">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold">{habit.name}</h2>
                     <span className="text-sm text-gray-400">Unit: {habit.unit}</span>
@@ -420,12 +420,12 @@ export default function HabitTracker() {
               ))}
             </div>
           ) : (
-            <div className="bg-gray-800 rounded-lg">
+            <div className="bg-card rounded-lg">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 gap-4 sm:gap-0">
                 <select
                   value={activeHabit}
                   onChange={(e) => setActiveHabit(e.target.value)}
-                  className="bg-gray-700 px-3 py-2 rounded w-full sm:w-auto"
+                  className="select w-full sm:w-auto"
                 >
                   {habits.map(h => (
                     <option key={h.id} value={h.id}>{h.name}</option>
@@ -445,12 +445,12 @@ export default function HabitTracker() {
                       type="number"
                       value={targetMinutes}
                       onChange={(e) => setTargetMinutes(Math.max(1, parseInt(e.target.value) || 0))}
-                      className="bg-gray-700 px-3 py-2 rounded w-20"
+                      className="input w-20"
                       min="1"
                     />
                     <button
                       onClick={toggleTimer}
-                      className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg flex items-center gap-2 flex-1 sm:flex-none justify-center"
+                      className="btn-success flex items-center gap-2 flex-1 sm:flex-none justify-center"
                     >
                       {isRunning ? <Pause size={20} /> : <Play size={20} />}
                       {isRunning ? 'Pause' : 'Start'}
@@ -458,7 +458,7 @@ export default function HabitTracker() {
                     {!isRunning && seconds > 0 && (
                       <button
                         onClick={logCurrentTime}
-                        className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center gap-2"
+                        className="btn-success flex items-center gap-2"
                       >
                         <Save size={20} />
                         Log Current {habits.find(h => h.id === activeHabit)?.unit}
@@ -466,7 +466,7 @@ export default function HabitTracker() {
                     )}
                     <button
                       onClick={resetTimer}
-                      className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg flex items-center gap-2"
+                      className="btn-destructive flex items-center gap-2"
                     >
                       <Square size={20} />
                       Reset
@@ -486,34 +486,40 @@ export default function HabitTracker() {
                           setShowLogForm(true);
                           setEditingEntry(null);
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center justify-center gap-2"
+                        className="btn-primary flex items-center justify-center gap-2"
                       >
                         <Plus size={20} />
                         Log {habits.find(h => h.id === activeHabit)?.unit}
                       </button>
-                      <div className="bg-gray-700 rounded-lg w-fit"> {/* Added w-fit to contain width */}
-                        <div className="p-1 flex gap-1">
-                          <button
-                            onClick={() => setActiveTab('grid')}
-                            className={`px-4 py-1.5 rounded-md transition-colors ${
-                              activeTab === 'grid' 
-                                ? 'bg-gray-600 text-white' 
-                                : 'text-gray-300 hover:text-white hover:bg-gray-600'
-                            }`}
-                          >
-                            Grid View
-                          </button>
-                          <button
-                            onClick={() => setActiveTab('list')}
-                            className={`px-4 py-1.5 rounded-md transition-colors ${
-                              activeTab === 'list' 
-                                ? 'bg-gray-600 text-white' 
-                                : 'text-gray-300 hover:text-white hover:bg-gray-600'
-                            }`}
-                          >
-                            List View
-                          </button>
-                        </div>
+                      <div className="flex gap-1"> {/* Removed bg-gray-700 class */}
+                        <button
+                          onClick={() => setActiveTab('grid')}
+                          className={`view-tab ${
+                            activeTab === 'grid' 
+                              ? 'view-tab-active' 
+                              : 'view-tab-inactive'
+                          }`}
+                        >
+                          <Grid 
+                            size={16} 
+                            className={activeTab === 'grid' ? 'text-accent' : ''} 
+                          />
+                          <span className="ml-2">Grid View</span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab('list')}
+                          className={`view-tab ${
+                            activeTab === 'list' 
+                              ? 'view-tab-active' 
+                              : 'view-tab-inactive'
+                          }`}
+                        >
+                          <List 
+                            size={16} 
+                            className={activeTab === 'list' ? 'text-accent' : ''} 
+                          />
+                          <span className="ml-2">List View</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -527,13 +533,13 @@ export default function HabitTracker() {
                         <div className="flex justify-end gap-4">
                           <button
                             onClick={() => setDeleteConfirm(null)}
-                            className="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-500"
+                            className="btn-secondary"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={confirmDelete}
-                            className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700"
+                            className="btn-destructive"
                           >
                             Delete
                           </button>
@@ -543,7 +549,7 @@ export default function HabitTracker() {
                   )}
 
                   {showLogForm && (
-                    <form onSubmit={logContribution} className="mb-4 p-4 bg-gray-700 rounded-lg">
+                    <form onSubmit={logContribution} className="form mb-4 p-4 bg-gray-700 rounded-lg">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block mb-2">Date</label>
@@ -551,7 +557,7 @@ export default function HabitTracker() {
                             type="date"
                             value={logDate}
                             onChange={(e) => setLogDate(e.target.value)}
-                            className="w-full bg-gray-600 px-3 py-2 rounded"
+                            className="input w-full"
                             max={new Date().toISOString().split('T')[0]}
                           />
                         </div>
@@ -561,7 +567,7 @@ export default function HabitTracker() {
                             type="number"
                             value={logMinutes}
                             onChange={(e) => setLogMinutes(Math.max(1, parseInt(e.target.value) || 0))}
-                            className="w-full bg-gray-600 px-3 py-2 rounded"
+                            className="input w-full"
                             min="1"
                           />
                         </div>
@@ -570,13 +576,13 @@ export default function HabitTracker() {
                         <button
                           type="button"
                           onClick={() => setShowLogForm(false)}
-                          className="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-500"
+                          className="btn-secondary"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700"
+                          className="btn-primary"
                         >
                           Save
                         </button>
@@ -594,7 +600,7 @@ export default function HabitTracker() {
                             placeholder="Search by date (YYYY-MM-DD)"
                             value={searchDate}
                             onChange={(e) => setSearchDate(e.target.value)}
-                            className="w-full bg-gray-700 pl-10 pr-4 py-2 rounded"
+                            className="input w-full pl-10 pr-4"
                           />
                         </div>
                       </div>
@@ -686,12 +692,12 @@ export default function HabitTracker() {
         </div>
       )}
 
-      {/* Habit Form Modal */}
+      {/* Update modal backgrounds */}
       {showHabitForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Add New Habit</h3>
-            <form onSubmit={handleHabitSubmit}>
+            <form onSubmit={handleHabitSubmit} className="form">
               <div className="space-y-4">
                 <div>
                   <label className="block mb-2">Habit Name</label>
@@ -699,7 +705,7 @@ export default function HabitTracker() {
                     type="text"
                     value={newHabit.name}
                     onChange={(e) => setNewHabit(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-gray-700 px-3 py-2 rounded"
+                    className="input w-full"
                     required
                   />
                 </div>
@@ -709,7 +715,7 @@ export default function HabitTracker() {
                     type="text"
                     value={newHabit.unit}
                     onChange={(e) => setNewHabit(prev => ({ ...prev, unit: e.target.value }))}
-                    className="w-full bg-gray-700 px-3 py-2 rounded"
+                    className="input w-full"
                     placeholder="e.g., minutes, pages, steps"
                     required
                   />
@@ -734,7 +740,7 @@ export default function HabitTracker() {
                         ...prev,
                         levels: { ...prev.levels, low: parseInt(e.target.value) || 0 }
                       }))}
-                      className="w-full bg-gray-700 px-3 py-2 rounded"
+                      className="input w-full"
                       required
                     />
                   </div>
@@ -747,7 +753,7 @@ export default function HabitTracker() {
                         ...prev,
                         levels: { ...prev.levels, medium: parseInt(e.target.value) || 0 }
                       }))}
-                      className="w-full bg-gray-700 px-3 py-2 rounded"
+                      className="input w-full"
                       required
                     />
                   </div>
@@ -760,7 +766,7 @@ export default function HabitTracker() {
                         ...prev,
                         levels: { ...prev.levels, high: parseInt(e.target.value) || 0 }
                       }))}
-                      className="w-full bg-gray-700 px-3 py-2 rounded"
+                      className="input w-full"
                       required
                     />
                   </div>
@@ -770,13 +776,13 @@ export default function HabitTracker() {
                 <button
                   type="button"
                   onClick={() => setShowHabitForm(false)}
-                  className="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-500"
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700"
+                  className="btn-primary"
                 >
                   Add Habit
                 </button>
@@ -820,7 +826,7 @@ export default function HabitTracker() {
                               onChange={(e) => setEditingHabit(prev => 
                                 prev ? { ...prev, name: e.target.value } : prev
                               )}
-                              className="w-full bg-gray-600 px-3 py-2 rounded"
+                              className="input w-full"
                             />
                           </div>
                           <div>
@@ -831,7 +837,7 @@ export default function HabitTracker() {
                               onChange={(e) => setEditingHabit(prev => 
                                 prev ? { ...prev, unit: e.target.value } : prev
                               )}
-                              className="w-full bg-gray-600 px-3 py-2 rounded"
+                              className="input w-full"
                             />
                           </div>
                           <div>
@@ -862,7 +868,7 @@ export default function HabitTracker() {
                                       }
                                     } : prev
                                   )}
-                                  className="w-full bg-gray-600 px-3 py-2 rounded"
+                                  className="input w-full"
                                 />
                               </div>
                             ))}
@@ -870,7 +876,7 @@ export default function HabitTracker() {
                           <div className="flex justify-end gap-2">
                             <button
                               onClick={() => setEditingHabit(null)}
-                              className="px-3 py-1.5 rounded bg-gray-600 hover:bg-gray-500"
+                              className="btn-secondary"
                             >
                               Cancel
                             </button>
@@ -886,7 +892,7 @@ export default function HabitTracker() {
                                 }
                                 setEditingHabit(null);
                               }}
-                              className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700"
+                              className="btn-primary"
                             >
                               Save Changes
                             </button>
@@ -927,12 +933,12 @@ export default function HabitTracker() {
                 <div className="space-y-4">
                   <button
                     onClick={exportData}
-                    className="w-full bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg flex items-center justify-center gap-2"
+                    className="btn-success w-full flex items-center justify-center gap-2"
                   >
                     <Download size={16} />
                     Export All Data
                   </button>
-                  <label className="w-full bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg flex items-center justify-center gap-2 cursor-pointer">
+                  <label className="btn-success w-full flex items-center justify-center gap-2 cursor-pointer">
                     <Upload size={16} />
                     Import Data
                     <input
@@ -961,13 +967,13 @@ export default function HabitTracker() {
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setDeleteHabitConfirm(null)}
-                className="px-4 py-2 rounded-lg bg-gray-600 hover:bg-gray-500"
+                className="btn-secondary"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteHabit(deleteHabitConfirm)}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700"
+                className="btn-destructive"
               >
                 Delete
               </button>
