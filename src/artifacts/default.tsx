@@ -204,12 +204,108 @@ export default function HabitTracker() {
     setSeconds(0);
   };
 
-  const toggleTimer = () => setIsRunning(!isRunning);
-  
+  // Add new state for timer
+  const [startTime, setStartTime] = useState<number | null>(null);
+
+  // Replace timer logic
+  const syncTimer = () => {
+    if (!startTime || !isRunning) return;
+    
+    const now = Date.now();
+    const elapsed = Math.floor((now - startTime) / 1000);
+    
+    // Check if timer should stop
+    if (elapsed >= targetMinutes * 60) {
+      setIsRunning(false);
+      setStartTime(null);
+      setSeconds(0);
+      saveFocusTime();
+    } else {
+      setSeconds(elapsed);
+    }
+  };
+
+  // Update toggleTimer
+  const toggleTimer = () => {
+    if (isRunning) {
+      // Stopping the timer
+      setIsRunning(false);
+      setStartTime(null);
+    } else {
+      // Starting the timer
+      const now = Date.now();
+      setStartTime(now - (seconds * 1000)); // Account for existing seconds
+      setIsRunning(true);
+    }
+  };
+
+  // Update resetTimer
   const resetTimer = () => {
     setIsRunning(false);
+    setStartTime(null);
     setSeconds(0);
   };
+
+  // Replace timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isRunning) {
+      // Sync immediately
+      syncTimer();
+      
+      // Then sync every second
+      interval = setInterval(() => {
+        syncTimer();
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning, startTime, targetMinutes]);
+
+  // Add effect to restore timer state on page load
+  useEffect(() => {
+    const savedTimer = localStorage.getItem('timerState');
+    if (savedTimer) {
+      const { startTime, targetMinutes } = JSON.parse(savedTimer);
+      if (startTime) {
+        setStartTime(startTime);
+        setTargetMinutes(targetMinutes);
+        setIsRunning(true);
+      }
+    }
+  }, []);
+
+  // Add effect to save timer state
+  useEffect(() => {
+    if (startTime) {
+      localStorage.setItem('timerState', JSON.stringify({
+        startTime,
+        targetMinutes
+      }));
+    } else {
+      localStorage.removeItem('timerState');
+    }
+  }, [startTime, targetMinutes]);
+
+  // Add cleanup effect
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isRunning) {
+        syncTimer();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [isRunning, startTime]);
 
   const logContribution = (e: React.FormEvent) => {
     e.preventDefault();
