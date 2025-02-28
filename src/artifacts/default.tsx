@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Square, Plus, Save, Search, Pencil, Trash2, Settings, Grid, Layout, Download, Upload, LucideIcon, List } from 'lucide-react';
+import { Play, Pause, Square, Plus, Save, Search, Pencil, Trash2, Settings, Grid, Layout, Download, Upload, LucideIcon, List, ShoppingBag, Leaf } from 'lucide-react';
 import ContributionGrid from '../components/ContributionGrid';
 import { useWindowSize } from '../components/hooks/useWindowSize';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { PlantDisplay } from '../components/PlantDisplay';
+
+// Plant types and their growth states
+type PlantType = 'sunflower' | 'cactus' | 'tree' | 'flower' | 'bonsai' | 'none';
+
+type PlantInfo = {
+  type: PlantType;
+  level: number;
+  maxLevel: number;
+  name: string;
+  price: number;
+};
 
 type HabitData = {
   date: string;
@@ -14,6 +26,7 @@ type Habit = {
   name: string;
   unit: string;
   useTimer: boolean;
+  plantType: PlantType;
   levels: {
     low: number;
     medium: number;
@@ -58,12 +71,26 @@ const NavButton = ({
   </button>
 );
 
+// Available plants for purchase
+const availablePlants: PlantInfo[] = [
+  { type: 'sunflower', level: 0, maxLevel: 5, name: 'Sunflower', price: 50 },
+  { type: 'cactus', level: 0, maxLevel: 5, name: 'Cactus', price: 100 },
+  { type: 'tree', level: 0, maxLevel: 5, name: 'Tree', price: 150 },
+  { type: 'flower', level: 0, maxLevel: 5, name: 'Flower', price: 75 },
+  { type: 'bonsai', level: 0, maxLevel: 5, name: 'Bonsai', price: 200 }
+];
+
 export default function HabitTracker() {
   // Update initial state to empty array
   const [habits, setHabits] = useState<Habit[]>(() => {
     try {
       const saved = localStorage.getItem('habits');
-      return saved ? JSON.parse(saved) : [];
+      const parsedHabits = saved ? JSON.parse(saved) : [];
+      // Add plantType if it doesn't exist in saved habits
+      return parsedHabits.map((h: any) => ({
+        ...h,
+        plantType: h.plantType || 'none'
+      }));
     } catch (error) {
       console.error('Error loading habits:', error);
       return [];
@@ -73,6 +100,17 @@ export default function HabitTracker() {
   // Initialize activeHabit to null or undefined when no habits exist
   const [activeHabit, setActiveHabit] = useState<string>(() => {
     return habits.length > 0 ? habits[0].id : '';
+  });
+
+  // Add coins/money state
+  const [coins, setCoins] = useState<number>(() => {
+    try {
+      const savedCoins = localStorage.getItem('coins');
+      return savedCoins ? parseInt(savedCoins) : 0;
+    } catch (error) {
+      console.error('Error loading coins:', error);
+      return 0;
+    }
   });
 
   const [activeView, setActiveView] = useState<'dashboard' | 'single'>('single');
@@ -95,6 +133,7 @@ export default function HabitTracker() {
     name: '',
     unit: '',
     useTimer: false,
+    plantType: 'none' as PlantType,
     levels: {
       low: 30,
       medium: 60,
@@ -105,6 +144,18 @@ export default function HabitTracker() {
   // Add settings state
   const [showSettings, setShowSettings] = useState(false);
 
+  // Add shop state
+  const [showShop, setShowShop] = useState(false);
+  const [ownedPlants, setOwnedPlants] = useState<PlantInfo[]>(() => {
+    try {
+      const saved = localStorage.getItem('ownedPlants');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error loading owned plants:', error);
+      return [];
+    }
+  });
+
   // Add new state for habit editing
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [deleteHabitConfirm, setDeleteHabitConfirm] = useState<string | null>(null);
@@ -113,6 +164,16 @@ export default function HabitTracker() {
   useEffect(() => {
     localStorage.setItem('habits', JSON.stringify(habits));
   }, [habits]);
+
+  // Save coins to localStorage
+  useEffect(() => {
+    localStorage.setItem('coins', coins.toString());
+  }, [coins]);
+
+  // Save owned plants to localStorage
+  useEffect(() => {
+    localStorage.setItem('ownedPlants', JSON.stringify(ownedPlants));
+  }, [ownedPlants]);
 
   const addHabit = (habit: Omit<Habit, 'id' | 'data'>) => {
     const newHabit = {
@@ -143,7 +204,9 @@ export default function HabitTracker() {
       habits,
       activeHabit,
       activeView,
-      activeTab
+      activeTab,
+      coins,
+      ownedPlants
     }, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -168,12 +231,33 @@ export default function HabitTracker() {
         if (imported.activeHabit) setActiveHabit(imported.activeHabit);
         if (imported.activeView) setActiveView(imported.activeView);
         if (imported.activeTab) setActiveTab(imported.activeTab);
+        if (imported.coins) setCoins(imported.coins);
+        if (imported.ownedPlants) setOwnedPlants(imported.ownedPlants);
         setShowSettings(false);
       } catch (error) {
         alert('Error importing data. Please check the file format.');
       }
     };
     reader.readAsText(file);
+  };
+
+  // Function to calculate plant growth level based on habit data
+  const calculatePlantLevel = (habit: Habit): number => {
+    if (habit.plantType === 'none') return 0;
+    
+    // Calculate total minutes/units logged
+    const totalValue = habit.data.reduce((sum, entry) => sum + entry.value, 0);
+    
+    // Find matching plant info
+    const plantInfo = availablePlants.find(p => p.type === habit.plantType);
+    if (!plantInfo) return 0;
+    
+    // Calculate level based on total value and thresholds
+    const thresholdPerLevel = 200; // Example: 200 minutes/units per level
+    let level = Math.floor(totalValue / thresholdPerLevel);
+    
+    // Cap at max level
+    return Math.min(level, plantInfo.maxLevel);
   };
 
   const saveFocusTime = () => {
@@ -186,6 +270,10 @@ export default function HabitTracker() {
         : [...h.data, { date: today, value: targetMinutes }];
       return { ...h, data: newData };
     }));
+    
+    // Add coins when completing timer
+    const earnedCoins = Math.floor(targetMinutes / 5); // 1 coin per 5 minutes
+    setCoins(prev => prev + earnedCoins);
   };
 
   const logCurrentTime = () => {
@@ -201,9 +289,37 @@ export default function HabitTracker() {
         : [...h.data, { date: today, value: elapsedMinutes }];
       return { ...h, data: newData };
     }));
+    
+    // Add coins when logging time
+    const earnedCoins = Math.floor(elapsedMinutes / 5); // 1 coin per 5 minutes
+    setCoins(prev => prev + earnedCoins);
+    
     setSeconds(0);
   };
 
+  // Add useEffect to update activeHabit when habits change
+  useEffect(() => {
+    if (habits.length > 0 && !habits.find(h => h.id === activeHabit)) {
+      setActiveHabit(habits[0].id);
+    }
+  }, [habits, activeHabit]);
+
+  // Add new function to buy plants
+  const buyPlant = (plant: PlantInfo) => {
+    if (coins >= plant.price) {
+      setCoins(prev => prev - plant.price);
+      setOwnedPlants(prev => [...prev, {...plant, level: 0}]);
+    }
+  };
+
+  // Add new function to set plant for a habit
+  const setPlantForHabit = (habitId: string, plantType: PlantType) => {
+    setHabits(prev => prev.map(h => 
+      h.id === habitId ? { ...h, plantType } : h
+    ));
+  };
+
+  // Add timer and other state/functions
   // Add new state for timer
   const [startTime, setStartTime] = useState<number | null>(null);
 
@@ -330,6 +446,13 @@ export default function HabitTracker() {
         : [...h.data, { date: logDate, value: logMinutes }];
       return { ...h, data: newData };
     }));
+    
+    // Add coins when manually logging
+    if (!editingEntry) {
+      const earnedCoins = Math.floor(logMinutes / 5); // 1 coin per 5 minutes
+      setCoins(prev => prev + earnedCoins);
+    }
+    
     setShowLogForm(false);
     setEditingEntry(null);
   };
@@ -389,6 +512,7 @@ export default function HabitTracker() {
       name: '',
       unit: '',
       useTimer: false,
+      plantType: 'none',
       levels: {
         low: 30,
         medium: 60,
@@ -458,6 +582,20 @@ export default function HabitTracker() {
               </NavButton>
             </div>
             <div className="flex items-center gap-2">
+              {/* Money counter display */}
+              <div className="flex items-center px-3 py-1 bg-card rounded-full mr-2">
+                <span className="text-yellow-400 mr-1">⚡</span>
+                <span className="font-semibold">{coins}</span>
+              </div>
+              
+              <button
+                onClick={() => setShowShop(true)}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <ShoppingBag size={20} />
+                <span className="hidden sm:inline">Shop</span>
+              </button>
+              
               <ThemeToggle />
               <button
                 onClick={() => setShowSettings(true)}
@@ -484,6 +622,17 @@ export default function HabitTracker() {
                     <h2 className="text-lg font-semibold">{habit.name}</h2>
                     <span className="text-sm text-gray-400">Unit: {habit.unit}</span>
                   </div>
+                  
+                  {/* Add plant display in dashboard */}
+                  {habit.plantType !== 'none' && (
+                    <div className="mb-4 flex justify-center">
+                      <PlantDisplay 
+                        type={habit.plantType} 
+                        level={calculatePlantLevel(habit)} 
+                      />
+                    </div>
+                  )}
+                  
                   <div className="space-y-6 overflow-auto"> {/* Added overflow-auto */}
                     <div className="min-w-fit"> {/* Added min-w-fit to prevent shrinking */}
                       <h3 className="text-sm text-gray-400 mb-2">Jan - June</h3>
@@ -528,6 +677,26 @@ export default function HabitTracker() {
                   ))}
                 </select>
               </div>
+
+              {/* Plant Display Section */}
+              {habits.find(h => h.id === activeHabit)?.plantType !== 'none' && (
+                <div className="p-4 sm:p-6 border-t border-gray-700 flex justify-center items-center">
+                  <div className="text-center">
+                    <PlantDisplay 
+                      type={habits.find(h => h.id === activeHabit)!.plantType} 
+                      level={calculatePlantLevel(habits.find(h => h.id === activeHabit)!)} 
+                      size="large"
+                    />
+                    <button 
+                      onClick={() => setShowShop(true)}
+                      className="mt-4 btn-primary flex items-center gap-2 mx-auto"
+                    >
+                      <Leaf size={16} />
+                      Change Plant
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Timer Section */}
               {habits.find(h => h.id === activeHabit)?.useTimer && (
@@ -788,7 +957,7 @@ export default function HabitTracker() {
         </div>
       )}
 
-      {/* Update modal backgrounds */}
+      {/* Habit form modal */}
       {showHabitForm && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
@@ -826,6 +995,35 @@ export default function HabitTracker() {
                     Enable Timer
                   </label>
                 </div>
+                
+                {/* Plant selection */}
+                <div>
+                  <label className="block mb-2">Plant Type</label>
+                  <select
+                    value={newHabit.plantType}
+                    onChange={(e) => setNewHabit(prev => ({ 
+                      ...prev, 
+                      plantType: e.target.value as PlantType 
+                    }))}
+                    className="select w-full"
+                  >
+                    <option value="none">No Plant</option>
+                    {ownedPlants.map(plant => (
+                      <option key={plant.type} value={plant.type}>{plant.name}</option>
+                    ))}
+                  </select>
+                  {newHabit.plantType === 'none' && ownedPlants.length > 0 && (
+                    <p className="text-sm text-gray-400 mt-1">
+                      Select a plant to visualize your progress!
+                    </p>
+                  )}
+                  {ownedPlants.length === 0 && (
+                    <p className="text-sm text-gray-400 mt-1">
+                      Visit the shop to buy plants first!
+                    </p>
+                  )}
+                </div>
+                
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block mb-2">Low</label>
@@ -884,6 +1082,94 @@ export default function HabitTracker() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Plant Shop Modal */}
+      {showShop && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold">Plant Shop</h3>
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 bg-gray-700 rounded-full">
+                  <span className="text-yellow-400 mr-1">⚡</span>
+                  <span className="font-semibold">{coins}</span>
+                </div>
+                <button
+                  onClick={() => setShowShop(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {availablePlants.map(plant => {
+                const isOwned = ownedPlants.some(p => p.type === plant.type);
+                const currentHabitPlant = habits.find(h => h.id === activeHabit)?.plantType === plant.type;
+                
+                return (
+                  <div key={plant.type} className="bg-gray-800 p-4 rounded-lg text-center">
+                    <div className="h-32 flex items-center justify-center">
+                      <PlantDisplay type={plant.type} level={plant.maxLevel} />
+                    </div>
+                    <h4 className="font-medium mt-2">{plant.name}</h4>
+                    <p className="text-sm text-gray-400 mb-2">Max Level: {plant.maxLevel}</p>
+                    
+                    {isOwned ? (
+                      currentHabitPlant ? (
+                        <button 
+                          className="btn-secondary w-full mt-2 opacity-50 cursor-not-allowed" 
+                          disabled
+                        >
+                          Current Plant
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => {
+                            setPlantForHabit(activeHabit, plant.type);
+                            setShowShop(false);
+                          }}
+                          className="btn-primary w-full mt-2"
+                        >
+                          Select for Habit
+                        </button>
+                      )
+                    ) : (
+                      <button 
+                        onClick={() => buyPlant(plant)}
+                        className={`w-full mt-2 ${
+                          coins >= plant.price 
+                            ? 'btn-success' 
+                            : 'btn-secondary opacity-50 cursor-not-allowed'
+                        }`}
+                        disabled={coins < plant.price}
+                      >
+                        Buy for {plant.price} ⚡
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {ownedPlants.length > 0 && (
+              <div className="mt-8">
+                <h4 className="font-medium mb-4">Remove Plant from Current Habit</h4>
+                <button 
+                  onClick={() => {
+                    setPlantForHabit(activeHabit, 'none');
+                    setShowShop(false);
+                  }}
+                  className="btn-destructive"
+                >
+                  Remove Plant
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

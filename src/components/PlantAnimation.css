@@ -1,0 +1,52 @@
+@keyframes gentle-sway {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(3deg);
+  }
+  75% {
+    transform: rotate(-3deg);
+  }
+}
+
+.plant-container {
+  position: relative;
+}
+
+.plant-emoji {
+  display: inline-block;
+  animation: gentle-sway 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.plant-growth {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  background-color: rgba(80, 200, 120, 0.3);
+  border-radius: 50%;
+  transition: all 0.5s ease;
+}
+
+.plant-container:hover .plant-growth {
+  width: 20px;
+  height: 20px;
+}
+
+.level-progress {
+  height: 4px;
+  background-color: rgba(80, 200, 120, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.level-progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, #4ade80, #16a34a);
+  transition: width 0.5s ease;
+}
