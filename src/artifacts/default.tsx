@@ -108,6 +108,7 @@ export default function HabitTracker() {
   // Add new state for habit editing
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [deleteHabitConfirm, setDeleteHabitConfirm] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(''); // Add state for search query
 
   // Save to localStorage whenever habits change
   useEffect(() => {
@@ -432,6 +433,11 @@ export default function HabitTracker() {
   const windowWidth = useWindowSize();
   const shouldSplitYear = windowWidth < 768; // Split on screens smaller than medium breakpoint
 
+  // Filter habits based on search query for dashboard view
+  const filteredHabits = habits.filter(habit => 
+    habit.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // In the render logic, add optional chaining and null checks
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -477,43 +483,72 @@ export default function HabitTracker() {
           </div>
 
           {activeView === 'dashboard' ? (
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-              {habits.map(habit => (
-                <div key={habit.id} className="bg-card p-4 sm:p-6 rounded-lg">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold">{habit.name}</h2>
-                    <span className="text-sm text-gray-400">Unit: {habit.unit}</span>
-                  </div>
-                  <div className="space-y-6 overflow-auto"> {/* Added overflow-auto */}
-                    <div className="min-w-fit"> {/* Added min-w-fit to prevent shrinking */}
-                      <h3 className="text-sm text-gray-400 mb-2">Jan - June</h3>
-                      {habit && (
-                        <ContributionGrid
-                          data={convertToGridData(habit)}
-                          levels={habit.levels}
-                          unit={habit.unit}
-                          onCellClick={handleCellClick}
-                          size="small"
-                          timeRange="first-half"
-                        />
-                      )}
+            <div className="space-y-6"> {/* Add a container for search and grid */}
+              {/* Search Bar */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search habits..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="input w-full pl-10 pr-4"
+                />
+              </div>
+
+              {/* Responsive Habit Grid */}
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredHabits.map(habit => (
+                  <div key={habit.id} className="bg-card p-4 sm:p-6 rounded-lg flex flex-col"> {/* Added flex flex-col */}
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-lg font-semibold truncate" title={habit.name}>{habit.name}</h2> {/* Added truncate and title */}
+                      <span className="text-sm text-gray-400 flex-shrink-0 ml-2">Unit: {habit.unit}</span> {/* Added flex-shrink-0 and ml-2 */}
                     </div>
-                    <div className="min-w-fit"> {/* Added min-w-fit to prevent shrinking */}
-                      <h3 className="text-sm text-gray-400 mb-2">July - Dec</h3>
-                      {habit && (
-                        <ContributionGrid
-                          data={convertToGridData(habit)}
-                          levels={habit.levels}
-                          unit={habit.unit}
-                          onCellClick={handleCellClick}
-                          size="small"
-                          timeRange="second-half"
-                        />
-                      )}
+                    {/* Ensure ContributionGrid container allows overflow */}
+                    <div className="space-y-4 overflow-x-auto pb-2 flex-grow"> {/* Added flex-grow and adjusted padding */}
+                      <div className="min-w-[300px]"> {/* Ensure minimum width for grid */}
+                        <h3 className="text-xs text-gray-400 mb-1">Jan - June</h3> {/* Adjusted text size and margin */}
+                        {habit && (
+                          <ContributionGrid
+                            data={convertToGridData(habit)}
+                            levels={habit.levels}
+                            unit={habit.unit}
+                            onCellClick={(date) => {
+                              setActiveHabit(habit.id); // Set active habit before handling click
+                              setActiveView('single'); // Switch to single view
+                              handleCellClick(date); // Handle the cell click (opens log form)
+                            }}
+                            size="small"
+                            timeRange="first-half"
+                            interactive={true} // Make cells clickable
+                          />
+                        )}
+                      </div>
+                      <div className="min-w-[300px]"> {/* Ensure minimum width for grid */}
+                        <h3 className="text-xs text-gray-400 mb-1">July - Dec</h3> {/* Adjusted text size and margin */}
+                        {habit && (
+                          <ContributionGrid
+                            data={convertToGridData(habit)}
+                            levels={habit.levels}
+                            unit={habit.unit}
+                            onCellClick={(date) => {
+                              setActiveHabit(habit.id); // Set active habit before handling click
+                              setActiveView('single'); // Switch to single view
+                              handleCellClick(date); // Handle the cell click (opens log form)
+                            }}
+                            size="small"
+                            timeRange="second-half"
+                            interactive={true} // Make cells clickable
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              {filteredHabits.length === 0 && (
+                <p className="text-center text-gray-500 mt-8">No habits match your search.</p>
+              )}
             </div>
           ) : (
             <div className="bg-card rounded-lg">
